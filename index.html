@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Estrattore S-21 → JSON</title>
+<meta name="description" content="Lettura diretta dei campi PDF S-21 — precisa al 100%">
+<meta name="application-name" content="Estrattore S-21">
+
+<!-- Colore browser -->
+<meta name="theme-color" content="#80242a">
+<meta name="apple-mobile-web-app-status-bar-style" content="#80242a">
+<meta name="msapplication-navbutton-color" content="#80242a">
+
+<!-- Icona browser / PWA -->
+<link rel="icon" type="image/png" sizes="192x192" href="https://asarritzu-boop.github.io/Estrattore/icona-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="https://asarritzu-boop.github.io/Estrattore/icona-512.png">
+<link rel="apple-touch-icon" href="https://asarritzu-boop.github.io/Estrattore/icona-192.png">
+
+<!-- PWA manifest -->
+<link rel="manifest" href="manifest.json">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="S-21">
+
+<!-- Open Graph — anteprima WhatsApp, Telegram, iMessage -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="Estrattore S-21 → JSON">
+<meta property="og:description" content="Lettura diretta dei campi PDF S-21 — precisa al 100%">
+<meta property="og:image" content="https://asarritzu-boop.github.io/Estrattore/icona-512.png">
+<meta property="og:image:width" content="512">
+<meta property="og:image:height" content="512">
+<meta property="og:url" content="https://asarritzu-boop.github.io/Estrattore/index.html">
+<meta property="og:locale" content="it_IT">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://asarritzu-boop.github.io/Estrattore/icona-512.png">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;600;700&display=swap');
+  :root {
+    --maroon:#80242a; --maroon-l:#a33039; --cream:#f7f3ee; --ink:#1a1410;
+    --muted:#7a6e68; --border:#d4c9c0; --ok:#2d6a4f; --ok-bg:#d8f3dc;
+    --warn:#b5451b; --warn-bg:#fde8e0; --card:#fff;
+    --mono:'IBM Plex Mono',monospace; --sans:'IBM Plex Sans',sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:var(--sans);background:var(--cream);color:var(--ink);min-height:100vh;}
+  header{background:var(--maroon);color:#fff;padding:18px 28px;display:flex;align-items:center;gap:14px;box-shadow:0 4px 20px rgba(128,36,42,.3);}
+  header .logo{width:42px;height:42px;background:rgba(255,255,255,.15);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;}
+  header h1{font-size:19px;font-weight:700;}
+  header p{font-size:12px;opacity:.7;}
+  .container{max-width:860px;margin:0 auto;padding:28px 16px 60px;}
+  .steps{display:flex;margin-bottom:28px;border-radius:12px;overflow:hidden;border:1px solid var(--border);background:var(--card);}
+  .step{flex:1;padding:13px 8px;text-align:center;font-size:11px;font-weight:700;letter-spacing:.5px;color:var(--muted);border-right:1px solid var(--border);transition:all .3s;display:flex;align-items:center;justify-content:center;gap:5px;}
+  .step:last-child{border-right:none;}
+  .step.active{background:var(--maroon);color:#fff;}
+  .step.done{background:var(--ok-bg);color:var(--ok);}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:24px;margin-bottom:18px;box-shadow:0 2px 10px rgba(0,0,0,.05);}
+  .card-title{font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--maroon);margin-bottom:16px;}
+  #dropzone{border:2px dashed var(--border);border-radius:12px;padding:48px 20px;text-align:center;cursor:pointer;transition:all .25s;background:var(--cream);}
+  #dropzone:hover,#dropzone.over{border-color:var(--maroon);background:#fdf0f1;}
+  #dropzone .icon{font-size:48px;margin-bottom:12px;}
+  #dropzone p{color:var(--muted);font-size:14px;line-height:1.7;}
+  #dropzone strong{color:var(--ink);}
+  #file-input{display:none;}
+  .file-list{margin-top:14px;display:flex;flex-direction:column;gap:7px;}
+  .file-chip{display:flex;align-items:center;gap:9px;background:var(--cream);border:1px solid var(--border);border-radius:8px;padding:9px 13px;}
+  .fname{flex:1;font-weight:600;font-family:var(--mono);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .badge{font-size:11px;padding:2px 9px;border-radius:20px;font-weight:600;white-space:nowrap;}
+  .bw{background:#f0f0f0;color:#888;} .bp{background:#e8f0fe;color:#1a56db;}
+  .bo{background:var(--ok-bg);color:var(--ok);} .be{background:var(--warn-bg);color:var(--warn);}
+  .rbtn{background:none;border:none;cursor:pointer;color:var(--muted);font-size:15px;padding:0 3px;}
+  .rbtn:hover{color:var(--warn);}
+  .btn{display:inline-flex;align-items:center;gap:7px;padding:12px 22px;border-radius:10px;border:none;font-family:var(--sans);font-size:14px;font-weight:600;cursor:pointer;transition:all .2s;}
+  .btn:active{transform:scale(.97);}
+  .btn-p{background:var(--maroon);color:#fff;} .btn-p:hover{background:var(--maroon-l);}
+  .btn-s{background:var(--cream);color:var(--ink);border:1px solid var(--border);} .btn-s:hover{border-color:var(--maroon);color:var(--maroon);}
+  .btn-ok{background:var(--ok);color:#fff;}
+  .btn-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px;}
+  .alert{padding:12px 15px;border-radius:10px;font-size:13px;line-height:1.5;margin-bottom:16px;}
+  .ai{background:#e8f0fe;color:#1a56db;border:1px solid #c0d5fb;}
+  .as{background:var(--ok-bg);color:var(--ok);border:1px solid #b2dfbb;}
+  .section{display:none;} .section.visible{display:block;}
+  .ptabs{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:18px;}
+  .ptab{padding:7px 16px;border-radius:20px;border:1px solid var(--border);cursor:pointer;font-size:13px;font-weight:600;background:#fff;transition:all .2s;}
+  .ptab:hover{border-color:var(--maroon);color:var(--maroon);}
+  .ptab.active{background:var(--maroon);color:#fff;border-color:var(--maroon);}
+  .fgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  @media(max-width:560px){.fgrid{grid-template-columns:1fr;}}
+  .field{display:flex;flex-direction:column;gap:5px;}
+  .field label{font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.7px;text-transform:uppercase;}
+  .field input{padding:9px 11px;border:1px solid var(--border);border-radius:8px;font-family:var(--sans);font-size:14px;color:var(--ink);background:#fff;outline:none;}
+  .field input:focus{border-color:var(--maroon);box-shadow:0 0 0 3px rgba(128,36,42,.1);}
+  .crow{display:flex;flex-wrap:wrap;gap:7px;}
+  .cpill{display:flex;align-items:center;gap:5px;padding:7px 13px;border:1.5px solid var(--border);border-radius:20px;cursor:pointer;font-size:13px;transition:all .2s;background:#fff;user-select:none;}
+  .cpill input{display:none;}
+  .cpill.on{background:var(--maroon);color:#fff;border-color:var(--maroon);}
+  .mtable{width:100%;border-collapse:collapse;font-size:13px;}
+  .mtable th{background:var(--maroon);color:#fff;padding:9px 7px;font-weight:600;font-size:11px;letter-spacing:.4px;text-transform:uppercase;text-align:center;}
+  .mtable th:first-child{text-align:left;}
+  .mtable td{padding:6px 7px;border-bottom:1px solid var(--border);text-align:center;vertical-align:middle;}
+  .mtable tr:nth-child(even) td{background:#fbf9f7;}
+  .mtable td:first-child{text-align:left;font-weight:600;}
+  .mtable input[type=number]{width:54px;padding:4px 5px;border:1px solid var(--border);border-radius:6px;font-size:13px;text-align:center;font-family:var(--mono);outline:none;}
+  .mtable input[type=text]{width:120px;padding:4px 5px;border:1px solid var(--border);border-radius:6px;font-size:12px;font-family:var(--mono);outline:none;}
+  .mtable input:focus{border-color:var(--maroon);}
+  .tgl{width:28px;height:28px;border-radius:6px;border:2px solid var(--border);background:#fff;cursor:pointer;font-size:14px;margin:0 auto;display:flex;align-items:center;justify-content:center;transition:all .15s;}
+  .tgl.r{background:var(--maroon);border-color:var(--maroon);color:#fff;}
+  .tgl.g{background:var(--ok);border-color:var(--ok);color:#fff;}
+  .jpre{background:#1a1410;color:#e8d5b0;border-radius:12px;padding:18px;font-family:var(--mono);font-size:12px;line-height:1.7;overflow:auto;max-height:400px;white-space:pre;}
+  .hint{font-size:12px;color:var(--muted);margin-top:9px;line-height:1.5;}
+  #ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:9999;align-items:center;justify-content:center;}
+  #ov.show{display:flex;}
+  .lbox{background:#fff;border-radius:18px;padding:32px 40px;text-align:center;box-shadow:0 24px 60px rgba(0,0,0,.35);min-width:280px;}
+  .lbox .em{font-size:42px;margin-bottom:12px;}
+  .lbox h3{font-size:17px;font-weight:700;margin-bottom:5px;}
+  .lbox p{font-size:13px;color:var(--muted);margin-bottom:18px;}
+  .pb{height:5px;background:#eee;border-radius:3px;overflow:hidden;}
+  .pf{height:100%;background:var(--maroon);border-radius:3px;transition:width .4s ease;}
+  .logs{margin-top:14px;text-align:left;font-family:var(--mono);font-size:11px;color:var(--muted);max-height:80px;overflow:hidden;}
+  .lok{color:var(--ok);} .lpr{color:#1a56db;}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">📋</div>
+  <div><h1>Estrattore S-21 → JSON</h1><p>Lettura diretta dei campi PDF — precisa al 100%</p></div>
+</header>
+<div class="container">
+  <div class="steps">
+    <div class="step active" id="s1">① Carica PDF</div>
+    <div class="step" id="s2">② Verifica</div>
+    <div class="step" id="s3">③ JSON</div>
+  </div>
+
+  <!-- STEP 1 -->
+  <div class="section visible" id="sec-upload">
+    <div class="card">
+      <div class="card-title">📂 Carica i moduli S-21</div>
+      <div class="alert ai">ℹ️ Carica uno o più PDF S-21 compilati digitalmente. I campi vengono letti direttamente dal PDF — nessuna AI, nessun errore di interpretazione.</div>
+      <div id="dropzone" onclick="document.getElementById('file-input').click()">
+        <div class="icon">📄</div>
+        <p><strong>Trascina i PDF qui</strong><br>oppure clicca per selezionarli<br>
+        <span style="font-size:12px;display:block;margin-top:5px">Puoi caricare più moduli insieme</span></p>
+      </div>
+      <input type="file" id="file-input" accept=".pdf" multiple>
+      <div class="file-list" id="file-list"></div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-p" id="btn-go" style="display:none" onclick="startExtraction()">⚡ Estrai dati</button>
+    </div>
+  </div>
+
+  <!-- STEP 2 -->
+  <div class="section" id="sec-edit">
+    <div class="card">
+      <div class="card-title">👥 Persone estratte</div>
+      <div class="ptabs" id="ptabs"></div>
+    </div>
+    <div id="pform"></div>
+    <div class="btn-row">
+      <button class="btn btn-s" onclick="goTo('upload')">← Ricarica</button>
+      <button class="btn btn-p" onclick="goToJson()">Genera JSON →</button>
+    </div>
+  </div>
+
+  <!-- STEP 3 -->
+  <div class="section" id="sec-json">
+    <div class="card">
+      <div class="card-title">📦 JSON pronto</div>
+      <div class="alert as" id="jmsg"></div>
+      <div class="jpre" id="jpre"></div>
+      <div class="btn-row">
+        <button class="btn btn-ok" onclick="dlJson()">⬇️ Scarica JSON</button>
+        <button class="btn btn-s" onclick="copyJson()">📋 Copia</button>
+        <button class="btn btn-s" onclick="goTo('edit')">← Modifica</button>
+      </div>
+      <p class="hint">💡 Importa nell'app tramite <strong>"Importa / Sincronizza"</strong> nella schermata principale.</p>
+    </div>
+  </div>
+</div>
+
+<div id="ov">
+  <div class="lbox">
+    <div class="em">⚡</div>
+    <h3 id="lt">Lettura in corso…</h3>
+    <p id="ls">Estrazione campi dal PDF</p>
+    <div class="pb"><div class="pf" id="lbar" style="width:0%"></div></div>
+    <div class="logs" id="llog"></div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+const MESI = ["Settembre","Ottobre","Novembre","Dicembre","Gennaio","Febbraio",
+              "Marzo","Aprile","Maggio","Giugno","Luglio","Agosto"];
+
+// Campo → indice mese (20=Settembre … 31=Agosto)
+const MESE_MAP = {20:0,21:1,22:2,23:3,24:4,25:5,26:6,27:7,28:8,29:9,30:10,31:11};
+
+let files=[], persons=[], cur=0;
+
+// ── DRAG & DROP ──
+const dz=document.getElementById('dropzone');
+dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('over');});
+dz.addEventListener('dragleave',()=>dz.classList.remove('over'));
+dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('over');addFiles([...e.dataTransfer.files]);});
+document.getElementById('file-input').addEventListener('change',e=>addFiles([...e.target.files]));
+
+function addFiles(fs){
+  fs.filter(f=>f.type==='application/pdf').forEach(f=>{
+    if(!files.find(x=>x.name===f.name)) files.push({file:f,name:f.name,status:'pending'});
+  });
+  renderFL();
+}
+function removeFile(i){files.splice(i,1);renderFL();}
+function renderFL(){
+  const m={pending:'bw',processing:'bp',ok:'bo',error:'be'};
+  const t={pending:'In attesa',processing:'Lettura…',ok:'Estratto ✓',error:'Errore'};
+  document.getElementById('file-list').innerHTML=files.map((f,i)=>
+    `<div class="file-chip"><span>📄</span><span class="fname">${f.name}</span>
+     <span class="badge ${m[f.status]}">${t[f.status]}</span>
+     <button class="rbtn" onclick="removeFile(${i})">✕</button></div>`
+  ).join('');
+  document.getElementById('btn-go').style.display=files.length?'inline-flex':'none';
+}
+
+// ── EXTRACTION ──
+async function startExtraction(){
+  if(!files.length) return;
+  persons=[];
+  showOv('Lettura PDF…','Estrazione diretta dei campi form',5);
+  for(let i=0;i<files.length;i++){
+    files[i].status='processing'; renderFL();
+    addLog(`📄 ${files[i].name}`,'lpr');
+    try{
+      const p=await extractPDF(files[i].file, files[i].name);
+      persons.push(p);
+      files[i].status='ok';
+      addLog(`✅ ${p.nome_cognome||files[i].name}`,'lok');
+    }catch(e){
+      files[i].status='error';
+      addLog(`❌ ${e.message}`, '');
+      console.error(e);
+    }
+    renderFL();
+    setBar(10+(i+1)/files.length*85);
+  }
+  hideOv();
+  if(!persons.length){alert('Nessun dato estratto.');return;}
+  goTo('edit'); renderTabs(); renderForm();
+}
+
+// ── PDF FORM READER ──
+async function extractPDF(file, filename){
+  const buf = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({data: buf}).promise;
+
+  // Collect all annotation form fields
+  const fields = {};
+  for(let p=1; p<=pdf.numPages; p++){
+    const page = await pdf.getPage(p);
+    const anns  = await page.getAnnotations();
+    for(const ann of anns){
+      if(ann.fieldName){
+        fields[ann.fieldName] = ann;
+      }
+    }
+  }
+
+  const tx  = n => (fields[n]?.fieldValue || '').trim();
+  const chk = n => {
+    const f = fields[n];
+    if(!f) return false;
+    const v = f.checkBox ? f.fieldValue : (f.buttonValue || f.fieldValue || '');
+    // checked if value is 'Yes', '/Yes', or matches exportValue
+    return v === 'Yes' || v === '/Yes' || (v !== '' && v !== 'Off' && v !== '/Off');
+  };
+
+  const person = {
+    id: Date.now().toString() + Math.floor(Math.random()*9999),
+    nome_cognome:   tx('900_1_Text_SanSerif'),
+    data_nascita:   tx('900_2_Text_SanSerif'),
+    maschio:        chk('900_3_CheckBox'),
+    femmina:        chk('900_4_CheckBox'),
+    data_battesimo: tx('900_5_Text_SanSerif'),
+    altre_pecore:   chk('900_6_CheckBox'),
+    unto:           chk('900_7_CheckBox'),
+    anziano:        chk('900_8_CheckBox'),
+    servitore:      chk('900_9_CheckBox'),
+    p_regolare:     chk('900_10_CheckBox'),
+    p_speciale:     chk('900_11_CheckBox'),
+    missionario:    chk('900_12_CheckBox'),
+    anno_servizio:  tx('900_13_Text_C_SanSerif'),
+    mesi_dati: []
+  };
+
+  // Fallback name from filename e.g. S-21_I_Cappai_Roberto.pdf
+  if(!person.nome_cognome){
+    const m = filename.replace('.pdf','').split('_');
+    if(m.length>=4) person.nome_cognome = m.slice(2).join(' ');
+  }
+
+  // Monthly data: field codes 20–31 (Settembre–Agosto)
+  for(let code=20; code<=31; code++){
+    const mi = MESE_MAP[code];
+    const minVal = chk(`901_${code}_CheckBox`);
+    const studiVal = tx(`902_${code}_Text_C_SanSerif`);
+    const ausVal  = chk(`903_${code}_CheckBox`);
+    const oreVal  = tx(`904_${code}_S21_Value`);
+    const obsVal  = tx(`905_${code}_Text_SanSerif`);
+    person.mesi_dati[mi] = {
+      min:   minVal,
+      studi: studiVal,
+      aus:   ausVal,
+      ore:   oreVal,
+      obs:   obsVal
+    };
+  }
+
+  // Fill any missing months
+  for(let i=0;i<12;i++){
+    if(!person.mesi_dati[i]) person.mesi_dati[i]={min:false,studi:'',aus:false,ore:'',obs:''};
+  }
+
+  return person;
+}
+
+// ── RENDER ──
+function renderTabs(){
+  document.getElementById('ptabs').innerHTML=persons.map((p,i)=>
+    `<div class="ptab ${i===cur?'active':''}" onclick="sw(${i})">${p.nome_cognome||'(senza nome)'}</div>`
+  ).join('');
+}
+function sw(i){saveF();cur=i;renderTabs();renderForm();}
+
+function renderForm(){
+  const p=persons[cur];
+  document.getElementById('pform').innerHTML=`
+  <div class="card">
+    <div class="card-title">👤 Dati Anagrafici</div>
+    <div class="fgrid">
+      <div class="field" style="grid-column:1/-1">
+        <label>Nome e Cognome</label>
+        <input id="f-nome" value="${esc(p.nome_cognome)}">
+      </div>
+      <div class="field"><label>Data nascita</label><input id="f-nas" placeholder="GG/MM/AAAA" value="${esc(p.data_nascita)}"></div>
+      <div class="field"><label>Data battesimo</label><input id="f-bat" placeholder="GG/MM/AAAA" value="${esc(p.data_battesimo)}"></div>
+      <div class="field"><label>Anno servizio</label><input id="f-ann" value="${esc(p.anno_servizio)}"></div>
+    </div>
+    <div style="margin-top:16px">
+      <div class="card-title" style="font-size:11px;margin-bottom:9px">SESSO</div>
+      <div class="crow">
+        ${pill('f-m','Maschio',p.maschio)}${pill('f-f','Femmina',p.femmina)}
+      </div>
+    </div>
+    <div style="margin-top:13px">
+      <div class="card-title" style="font-size:11px;margin-bottom:9px">CATEGORIA & INCARICHI</div>
+      <div class="crow">
+        ${pill('f-ap','Altre pecore',p.altre_pecore)}
+        ${pill('f-un','Unto',p.unto)}
+        ${pill('f-az','Anziano',p.anziano)}
+        ${pill('f-sv','Servitore min.',p.servitore)}
+        ${pill('f-pr','Pioniere regolare',p.p_regolare)}
+        ${pill('f-ps','Pioniere speciale',p.p_speciale)}
+        ${pill('f-mi','Missionario',p.missionario)}
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">📅 Dati Mensili</div>
+    <div style="overflow-x:auto">
+      <table class="mtable">
+        <thead><tr>
+          <th style="text-align:left">Mese</th>
+          <th>Min.</th><th>Studi</th><th>Aus.</th><th>Ore</th><th>Note</th>
+        </tr></thead>
+        <tbody>${MESI.map((m,i)=>{
+          const d=p.mesi_dati[i]||{min:false,studi:'',aus:false,ore:'',obs:''};
+          return `<tr>
+            <td>${m}</td>
+            <td><div class="tgl ${d.min?'r':''}" onclick="tgl(${i},'min',this)">${d.min?'✓':''}</div></td>
+            <td><input type="number" min="0" max="99"  data-i="${i}" data-f="studi" value="${esc(d.studi)}"></td>
+            <td><div class="tgl ${d.aus?'g':''}" onclick="tgl(${i},'aus',this)">${d.aus?'✓':''}</div></td>
+            <td><input type="number" min="0" max="999" data-i="${i}" data-f="ore"   value="${esc(d.ore)}"></td>
+            <td><input type="text"                     data-i="${i}" data-f="obs"   value="${esc(d.obs)}"></td>
+          </tr>`;
+        }).join('')}</tbody>
+      </table>
+    </div>
+  </div>`;
+  document.querySelectorAll('.cpill').forEach(el=>el.addEventListener('click',()=>{
+    el.classList.toggle('on'); el.querySelector('input').checked=el.classList.contains('on');
+  }));
+}
+
+function pill(id,label,checked){
+  return `<label class="cpill ${checked?'on':''}"><input type="checkbox" id="${id}" ${checked?'checked':''}> ${label}</label>`;
+}
+function tgl(idx,f,el){
+  const p=persons[cur]; p.mesi_dati[idx][f]=!p.mesi_dati[idx][f];
+  const v=p.mesi_dati[idx][f];
+  el.className='tgl'+(v?(f==='min'?' r':' g'):''); el.textContent=v?'✓':'';
+  if(f==='aus'&&v){
+    p.mesi_dati[idx].min=true;
+    document.querySelectorAll('.tgl').forEach(b=>{
+      if(b.getAttribute('onclick')===`tgl(${idx},'min',this)`){b.className='tgl r';b.textContent='✓';}
+    });
+  }
+}
+
+function saveF(){
+  if(!persons.length) return;
+  const p=persons[cur];
+  const g=id=>document.getElementById(id);
+  const ch=id=>{const e=g(id);return e?e.checked:false;};
+  if(!g('f-nome')) return;
+  p.nome_cognome=g('f-nome').value; p.data_nascita=g('f-nas').value;
+  p.data_battesimo=g('f-bat').value; p.anno_servizio=g('f-ann').value;
+  p.maschio=ch('f-m'); p.femmina=ch('f-f'); p.altre_pecore=ch('f-ap');
+  p.unto=ch('f-un'); p.anziano=ch('f-az'); p.servitore=ch('f-sv');
+  p.p_regolare=ch('f-pr'); p.p_speciale=ch('f-ps'); p.missionario=ch('f-mi');
+  document.querySelectorAll('[data-f]').forEach(inp=>{
+    p.mesi_dati[+inp.dataset.i][inp.dataset.f]=inp.value;
+  });
+}
+
+// ── JSON ──
+function goToJson(){
+  saveF();
+  const out=JSON.stringify({a:persons,g:[],s:[]},null,2);
+  document.getElementById('jpre').textContent=out;
+  document.getElementById('jmsg').textContent=`✅ ${persons.length} persona/e estratta/e. JSON pronto per l'importazione.`;
+  goTo('json');
+}
+function dlJson(){
+  saveF();
+  const b=new Blob([JSON.stringify({a:persons,g:[],s:[]},null,2)],{type:'application/json'});
+  const a=Object.assign(document.createElement('a'),{
+    href:URL.createObjectURL(b),
+    download:'backup_s21_'+new Date().toISOString().slice(0,10)+'.json'
+  }); a.click();
+}
+async function copyJson(){
+  await navigator.clipboard.writeText(document.getElementById('jpre').textContent);
+  const b=event.currentTarget,o=b.textContent; b.textContent='✅ Copiato!';
+  setTimeout(()=>b.textContent=o,2000);
+}
+
+// ── NAV ──
+function goTo(n){
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('visible'));
+  document.getElementById('sec-'+n).classList.add('visible');
+  const or=['upload','edit','json']; const ix=or.indexOf(n);
+  or.forEach((s,i)=>{
+    const e=document.getElementById('s'+(i+1));
+    e.className='step'+(i===ix?' active':i<ix?' done':'');
+  });
+}
+
+// ── LOADING ──
+function showOv(t,s,p){
+  document.getElementById('ov').classList.add('show');
+  document.getElementById('lt').textContent=t;
+  document.getElementById('ls').textContent=s;
+  document.getElementById('llog').innerHTML='';
+  setBar(p);
+}
+function hideOv(){document.getElementById('ov').classList.remove('show');}
+function setBar(p){document.getElementById('lbar').style.width=p+'%';}
+function addLog(m,c){
+  const l=document.getElementById('llog');
+  l.insertAdjacentHTML('afterbegin',`<div class="${c}">${m}</div>`);
+}
+
+// ── UTILS ──
+function esc(v){return String(v??'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');}
+</script>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js')
+      .then(reg => console.log('[SW] Registrato:', reg.scope))
+      .catch(err => console.warn('[SW] Errore:', err));
+  });
+}
+</script>
+</body>
+</html>
